@@ -19,7 +19,7 @@ def read_file():
     try:
         output = []
         with open('check.csv', newline='\n') as csv_file:
-            reader = csv.reader(csv_file, delimiter=' ',  quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            reader = csv.reader(csv_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for row in reader:
                 output.append(row)
         return output
@@ -39,11 +39,22 @@ def hash(path, file):
     return hasher.hexdigest()
 
 
-def convert_changed(path, file):
-    full_name = path + '/' + file
-    data = pd.read_excel(io=full_name, header=0, engine='openpyxl', na_values='Na')
-    print(data)
-    # data.to_sql('assets', con=)
+def convert_changed(path, files):
+    # TODO: currently does not go through every page of the file, need to fix.
+    merged = None
+    for file in files:
+        full_name = path + '/' + file
+        data = pd.read_excel(io=full_name, header=0, engine='openpyxl', na_filter=False, parse_dates=True,
+                             dtype={'Location': 'string'})
+        print(data)
+        if merged is None:
+            merged = data
+        else:
+            merged = pd.concat([merged, data], axis=0, join='outer', ignore_index=False, keys=None, levels=None,
+                               names=None, verify_integrity=False, copy=True)
+    print(merged)
+    with pd.ExcelWriter('test.xlsx') as writer:
+        merged.to_excel(writer)
 
 
 def archive_file(path, file_list, archive):
@@ -60,7 +71,7 @@ def archive_file(path, file_list, archive):
 def main(ingest_path="./ingest", archive_path="./archive"):
     # Read directory 'ingest'
     # Get list of excel sheets
-    files = os.listdir(ingest_path)    # TODO: This need to have a check to make sure that the path exist
+    files = os.listdir(ingest_path)  # TODO: This need to have a check to make sure that the path exist
     hash_list = []
     file_list = []
 
@@ -75,12 +86,14 @@ def main(ingest_path="./ingest", archive_path="./archive"):
             print(f)
 
     obj = read_file()  # Reads in existing check file
+    changed_files = []
     for row in obj:
         if not hash_list.__contains__(row[1]):
             print("File has changed. Updating %s..." % (row[0]))
-            convert_changed(ingest_path, row[0])
+            changed_files.append(row[0])
             write_file(file_list, hash_list)
 
+    convert_changed(ingest_path, changed_files)
     archive_file(ingest_path, file_list, archive_path)
 
 
