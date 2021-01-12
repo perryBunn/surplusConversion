@@ -45,16 +45,29 @@ def convert_changed(path, files):
     for file in files:
         full_name = path + '/' + file
         data = pd.read_excel(io=full_name, header=0, engine='openpyxl', na_filter=False, parse_dates=True,
-                             dtype={'Location': 'string'})
+                             dtype={'Location': 'string'}, sheet_name=None)
         print(data)
-        if merged is None:
+        if type(data) is dict:
+            keys = data.keys()
+            temp = pd.DataFrame()
+            for key in keys:
+                if merged is None:
+                    merged = data[key]
+                else:
+                    merged = pd.concat([merged, data[key]], axis=0, join='outer', ignore_index=False, keys=None,
+                                       levels=None, names=None, verify_integrity=False, copy=True)
+        elif merged is None:
             merged = data
         else:
             merged = pd.concat([merged, data], axis=0, join='outer', ignore_index=False, keys=None, levels=None,
                                names=None, verify_integrity=False, copy=True)
-    print(merged)
+    merged.reset_index(drop=True, inplace=True)
+    res = merged.replace(to_replace={'Type': r'^\s+$'}, value='NaN', regex=True,)
+    res.drop(merged.columns[merged.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
+    print(res)
     with pd.ExcelWriter('test.xlsx') as writer:
-        merged.to_excel(writer)
+        res.to_excel(writer)
+    print('Wrote excel file')
 
 
 def archive_file(path, file_list, archive):
@@ -91,9 +104,9 @@ def main(ingest_path="./ingest", archive_path="./archive"):
         if not hash_list.__contains__(row[1]):
             print("File has changed. Updating %s..." % (row[0]))
             changed_files.append(row[0])
-            write_file(file_list, hash_list)
-
-    convert_changed(ingest_path, changed_files)
+            # write_file(file_list, hash_list) # TODO: uncomment this line when not debugging.
+    if changed_files.__len__() != 0:
+        convert_changed(ingest_path, changed_files)
     archive_file(ingest_path, file_list, archive_path)
 
 
