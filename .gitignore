@@ -1,3 +1,7 @@
-.idea/
+.idea/workspace.xml
+.idea/usage.statistics.xml
+.idea/task.xms
+.idea/*.iml
 ingest/
 archive/
+test.xlsx

@@ -3,11 +3,12 @@ import os
 import hashlib
 import csv
 import traceback
+import sqlite3
 
 
-def write_file(file_list, hash_list):
+def write_file(file_list, hash_list, file='check.csv'):
     try:
-        with open('check.csv', 'w', newline='\n') as csv_file:
+        with open(file, 'w', newline='\n') as csv_file:
             writer = csv.writer(csv_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for i in range(len(file_list)):
                 writer.writerow([file_list[i]] + [hash_list[i]])
@@ -15,10 +16,10 @@ def write_file(file_list, hash_list):
         traceback.print_exc()
 
 
-def read_file():
+def read_file(file='check.csv'):
     try:
         output = []
-        with open('check.csv', newline='\n') as csv_file:
+        with open(file, newline='\n') as csv_file:
             reader = csv.reader(csv_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for row in reader:
                 output.append(row)
@@ -39,8 +40,17 @@ def hash(path, file):
     return hasher.hexdigest()
 
 
+def write_db(data: pd.DataFrame):
+    conn = sqlite3.connect('Surplus.db')
+    c = conn.cursor()
+    # TODO: Need to iterate though the data and add it to the db if it hasn't been added already.
+    # TODO: Need someway to check and see if an item has been added to the db already, checking for type/name isnt
+    #       viable since items can have the same name.
+
+    conn.close()
+
+
 def convert_changed(path, files):
-    # TODO: currently does not go through every page of the file, need to fix.
     merged = None
     for file in files:
         full_name = path + '/' + file
@@ -68,6 +78,8 @@ def convert_changed(path, files):
     with pd.ExcelWriter('test.xlsx') as writer:
         res.to_excel(writer)
     print('Wrote excel file')
+    write_db(res)
+    print('Wrote to db')
 
 
 def archive_file(path, file_list, archive):
@@ -77,8 +89,6 @@ def archive_file(path, file_list, archive):
             full_name = path + '/' + file
             archive_name = archive + '/' + file
             os.rename(full_name, archive_name)
-        else:
-            print(file, " was not moved.")
 
 
 def main(ingest_path="./ingest", archive_path="./archive"):
@@ -97,7 +107,7 @@ def main(ingest_path="./ingest", archive_path="./archive"):
             print(f, hashcode)
         else:
             print(f)
-
+    # TODO: Need a case for there being not check file.
     obj = read_file()  # Reads in existing check file
     changed_files = []
     for row in obj:
@@ -107,7 +117,7 @@ def main(ingest_path="./ingest", archive_path="./archive"):
             # write_file(file_list, hash_list) # TODO: uncomment this line when not debugging.
     if changed_files.__len__() != 0:
         convert_changed(ingest_path, changed_files)
-    archive_file(ingest_path, file_list, archive_path)
+    # archive_file(ingest_path, file_list, archive_path)  # TODO: uncomment this line when not debugging.
 
 
 if __name__ == '__main__':
