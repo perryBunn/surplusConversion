@@ -4,6 +4,7 @@ import hashlib
 import csv
 import traceback
 import sqlite3
+import re
 
 
 def write_file(file_list, hash_list, file='check.csv'):
@@ -46,7 +47,7 @@ def write_db(data: pd.DataFrame):
     # TODO: Need to iterate though the data and add it to the db if it hasn't been added already.
     # TODO: Need someway to check and see if an item has been added to the db already, checking for type/name isnt
     #       viable since items can have the same name.
-
+    print('This is where it would add to the DB!')
     conn.close()
 
 
@@ -72,6 +73,19 @@ def convert_changed(path, files):
             merged = pd.concat([merged, data], axis=0, join='outer', ignore_index=False, keys=None, levels=None,
                                names=None, verify_integrity=False, copy=True)
     merged.reset_index(drop=True, inplace=True)
+
+    # serial number regex: (serial(number){0,1})|(s\/{0,1}n)
+    # TODO: https://stackoverflow.com/questions/65851175/error-concatating-pandas-dataframe-columns
+    matchedColumns = []
+    for col in merged.keys():
+        label = col.replace(' ', '').lower()
+        print(label)
+        if re.match(r"serial(number){0,1}|s/{0,1}n", label):
+            matchedColumns.append(col)
+    print("matched:", matchedColumns)
+    if matchedColumns.__len__() > 1:
+        merged = pd.merge(right=merged, left=merged[matchedColumns],)
+
     res = merged.replace(to_replace={'Type': r'^\s+$'}, value='NaN', regex=True,)
     res.drop(merged.columns[merged.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
     print(res)
