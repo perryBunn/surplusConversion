@@ -75,23 +75,26 @@ def convert_changed(path, files):
     merged.reset_index(drop=True, inplace=True)
 
     # serial number regex: (serial(number){0,1})|(s\/{0,1}n)
-    # TODO: https://stackoverflow.com/questions/65851175/error-concatating-pandas-dataframe-columns
-    matchedColumns = []
+    # TODO: If the column name matches then rename those columns to 'serialnumber'
+    serialDict = {}
     for col in merged.keys():
         label = col.replace(' ', '').lower()
         print(label)
-        if re.match(r"serial(number){0,1}|s/{0,1}n", label):
-            matchedColumns.append(col)
-    print("matched:", matchedColumns)
-    if matchedColumns.__len__() > 1:
-        merged = pd.merge(right=merged, left=merged[matchedColumns],)
+        if re.match(r"serial|s/{0,1}n", label):
+            serialDict[label] = 'serialnumber'
+    print("matched:", serialDict)
+    if serialDict.__len__() > 1:
+        merged = merged.rename(columns=serialDict)
 
     res = merged.replace(to_replace={'Type': r'^\s+$'}, value='NaN', regex=True,)
     res.drop(merged.columns[merged.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
     print(res)
-    with pd.ExcelWriter('test.xlsx') as writer:
-        res.to_excel(writer)
-    print('Wrote excel file')
+    try:
+        with pd.ExcelWriter('test.xlsx') as writer:
+            res.to_excel(writer)
+        print('Wrote excel file')
+    except PermissionError:
+        print('Could not write file. Please make sure that "test.xlsx" is closed.')
     write_db(res)
     print('Wrote to db')
 
