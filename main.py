@@ -42,52 +42,94 @@ def hash(path, file):
 
 
 def write_db(data: pd.DataFrame):
-    conn = sqlite3.connect('Surplus.db')
-    c = conn.cursor()
     # TODO: Need to iterate though the data and add it to the db if it hasn't been added already.
-    # TODO: Need someway to check and see if an item has been added to the db already, checking for type/name isnt
-    #       viable since items can have the same name.
-    print('This is where it would add to the DB!')
-    conn.close()
+    """
+    Everything must have a Serial number.
+    As iterating through the dataframe search the table for the serial number is its not found then add it.
+    """
+
+    conn = None
+    try:
+        conn = sqlite3.connect('Surplus.db')
+        c = conn.cursor()
+        for index, row in data.iterrows():
+            type: str = row["Type"]
+            make: str = row["Make"]
+            model: str = row["Model"]
+            sn: str = row["serial_number"]
+            pc = row["Property Control #"]
+            location: str = row["Location"]
+            notes: str = row["Notes"]
+            inventory = row["Inventory Tag"]
+            corrected: bool = row["IssueTrak Corrected"]
+            insert_data = "INSERT INTO Surplus (type, make, model, serialnumber, propertycontrol, location, notes, " \
+                          "inventorytag, issuetrakcorrected) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            # If serial number is already there then skip
+            found = False
+            find_date = "SELECT * FROM Surplus WHERE serialnumber=?"
+
+            # TODO: If Serial number is empty then it will not add any other assets that also do not have serial numbers
+
+            c.execute(find_date, (sn,))
+            res = c.fetchall()
+            if res.__len__() > 0:
+                found = True
+            print(found, sn)
+            if found:
+                continue
+            else:
+                c.execute(insert_data, (type, make, model, sn, pc, location, notes, inventory, corrected))
+                conn.commit()
+        conn.close()
+    except sqlite3.Error as e:
+        print(e)
 
 
 def convert_changed(path, files):
-    merged = None
+    df1 = None
     for file in files:
         full_name = path + '/' + file
         data = pd.read_excel(io=full_name, header=0, engine='openpyxl', na_filter=False, parse_dates=True,
                              dtype={'Location': 'string'}, sheet_name=None)
-        print(data)
+
+        # If there are multiple sheets; merge sheets with df1
+        patt = re.compile(r'(serial(number)?)|(s\/?n)')
         if type(data) is dict:
             keys = data.keys()
-            temp = pd.DataFrame()
             for key in keys:
-                if merged is None:
-                    merged = data[key]
+                for col in data[key].columns:
+                    label = col.replace(' ', '').lower()
+                    print(label)
+                    if re.match(patt, label):
+                        print(col, "matched!")
+                        data[key].rename(columns={col: "serial_number"}, inplace=True)
+
+                if df1 is None:
+                    df1 = data[key]
                 else:
-                    merged = pd.concat([merged, data[key]], axis=0, join='outer', ignore_index=False, keys=None,
+                    df1 = pd.concat([df1, data[key]], axis=0, join='outer', ignore_index=False, keys=None,
                                        levels=None, names=None, verify_integrity=False, copy=True)
-        elif merged is None:
-            merged = data
         else:
-            merged = pd.concat([merged, data], axis=0, join='outer', ignore_index=False, keys=None, levels=None,
+            for col in data.columns:
+                label = col.replace(' ', '').lower()
+                print(label)
+                if re.match(patt, label):
+                    print(col, "matched!")
+                    data.rename(columns={col: "serial_number"}, inplace=True)
+
+            if df1 is None:  # If first iteration
+                df1 = data
+            else:  # If data is only one sheet then merge to df1
+                df1 = pd.concat([df1, data], axis=0, join='outer', ignore_index=False, keys=None, levels=None,
                                names=None, verify_integrity=False, copy=True)
-    merged.reset_index(drop=True, inplace=True)
 
-    # serial number regex: (serial(number){0,1})|(s\/{0,1}n)
-    # TODO: https://stackoverflow.com/questions/65851175/error-concatating-pandas-dataframe-columns
-    matchedColumns = []
-    for col in merged.keys():
-        label = col.replace(' ', '').lower()
-        print(label)
-        if re.match(r"serial(number){0,1}|s/{0,1}n", label):
-            matchedColumns.append(col)
-    print("matched:", matchedColumns)
-    if matchedColumns.__len__() > 1:
-        merged = pd.merge(right=merged, left=merged[matchedColumns],)
+    df1.reset_index(drop=True, inplace=True)
+    res = df1.replace(to_replace={'Type': ' '}, value=None, regex=True,)
+    # Drop columns
+    res.drop(df1.columns[df1.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
+    res.drop(df1.columns[df1.columns.str.contains('First and Last', case=False)], axis=1, inplace=True)
+    res.drop(df1.columns[df1.columns.str.contains('Date', case=False)], axis=1, inplace=True)
 
-    res = merged.replace(to_replace={'Type': r'^\s+$'}, value='NaN', regex=True,)
-    res.drop(merged.columns[merged.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
     print(res)
     with pd.ExcelWriter('test.xlsx') as writer:
         res.to_excel(writer)
