@@ -5,3 +5,4 @@
 ingest/
 archive/
 *.xlsx
+/venv/
