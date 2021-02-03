@@ -44,6 +44,26 @@ def hash(path, file):
     return hasher.hexdigest()
 
 
+def insert_db(cursor, item: list, err: Exception):
+    insert_data = "INSERT INTO Surplus (type, make, model, serialnumber, propertycontrol, location, notes, " \
+                  "inventorytag, issuetrakcorrected) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    no_serial = "INSERT INTO Other (type, make, model, propertycontrol, location, notes, inventorytag, " \
+                "issuetrakcorrected) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    insert_malform = "INSERT INTO Errors (type, make, model, serialnumber, propertycontrol, location, notes, " \
+                     "inventorytag, issuetrakcorrected) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+
+    res = type(item[3])
+    if err is None:
+        print(err)
+        if res == float:
+            cursor.execute(no_serial, (item[0], item[1], item[2], item[4], item[5], item[6], item[7], item[8]))
+        else:
+            cursor.execute(insert_data, (item[0], item[1], item[2], item[3], item[4], item[5], item[6], item[7], item[8]))
+    else:
+        print("Error", err)
+        cursor.execute(insert_malform, (item[0], item[1], item[2], item[3], item[4], item[5], item[6], item[7], item[8]))
+
+
 def write_db(data: pd.DataFrame):
     """
     Everything must have a Serial number.
@@ -61,43 +81,42 @@ def write_db(data: pd.DataFrame):
             c.execute(purge)
             purge = "DELETE FROM Other"
             c.execute(purge)
+            purge = "DELETE FROM Errors"
+            c.execute(purge)
             conn.commit()
 
-        insert_data = "INSERT INTO Surplus (type, make, model, serialnumber, propertycontrol, location, notes, " \
-                      "inventorytag, issuetrakcorrected) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-
         find_serial = "SELECT * FROM Surplus WHERE serialnumber=?"
-
-        no_serial = "INSERT INTO Other (type, make, model, inventorytag, propertycontrol, location, notes,  " \
-                    "issuetrakcorrected) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 
         clean = "DELETE FROM Other WHERE type IS '' "
 
         print("Adding Data")
         for index, row in data.iterrows():
+
+            item = [row["Type"],
+                    row["Make"],
+                    str(row["Model"]),
+                    row["serial_number"],
+                    row["Property Control #"],
+                    row["Location"],
+                    row["Notes"],
+                    row["Inventory Tag"],
+                    row["Issuetrak Corrected"]]
+
             try:
-                res = type(row["serial_number"])
-                if res == float:
-                    c.execute(no_serial,
-                              (row["Type"], row["Make"], row["Model"], row["Inventory Tag"], row["Property Control #"],
-                               row["Location"], row["Notes"], row["Issuetrak Corrected"]))
-                else:
-                    c.execute(insert_data,
-                              (row["Type"], row["Make"], row["Model"], row["serial_number"], row["Property Control #"],
-                               row["Location"], row["Notes"], row["Inventory Tag"], row["Issuetrak Corrected"]))
+                insert_db(c, item, None)
             except sqlite3.Error as e:
-                print(row["Type"], row["Make"], row["Model"], row["serial_number"], row["Property Control #"],
-                      row["Location"],
-                      row["Notes"], row["Inventory Tag"], row["Issuetrak Corrected"])
+                print(item)
+                print("Adding to errored...")
                 print(e)
+                insert_db(c, item, e)
 
         print("Cleaning DB")
         # TODO: https://stackoverflow.com/questions/1612267/move-sql-data-from-one-table-to-another
         c.execute(clean)
         conn.commit()
         conn.close()
-    except sqlite3.Error as e:
-        print(e)
+    except sqlite3.Error as err:
+        print(err)
 
 
 def convert_changed(path, files):
