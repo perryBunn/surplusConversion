@@ -70,6 +70,8 @@ def convert_changed(path, files):
 
 
 def main(ingest_path="./ingest", archive_path="./archive", check_path='check.csv'):
+    global no_archive
+    global dev
     # Read directory 'ingest'
     # Get list of excel sheets
     files = os.listdir(ingest_path)  # TODO: This need to have a check to make sure that the path exist
