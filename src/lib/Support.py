@@ -25,10 +25,11 @@ def gen_hash(path, file):
     return hashed.hexdigest()
 
 
-def read_config(file='config') -> dict:
+def read_config(file='config', path='..') -> dict:
     try:
         output = {}
-        with open(file, newline='\n') as file:
+        full_name = path + '/' + file
+        with open(full_name, newline='\n') as file:
             for line in file:
                 items = line.split()
                 output[items[0]] = items[1]
@@ -43,7 +44,7 @@ def write_file(file_list, hash_list, file, dev):
             writer = csv.writer(csv_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for i in range(len(file_list)):
                 if dev:
-                    writer.writerow([file_list[i]] + [hash_list[i]+"dev"])
+                    writer.writerow([file_list[i]] + [hash_list[i] + "dev"])
     except ValueError:
         traceback.print_exc()
 

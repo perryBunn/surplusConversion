@@ -1,7 +1,7 @@
 import sqlite3
 import pandas as pd
 
-from src.Add import insert
+from lib.Add import insert
 
 
 def write_db(data: pd.DataFrame, dev: bool):

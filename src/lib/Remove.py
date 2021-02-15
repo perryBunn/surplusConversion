@@ -1,4 +1,4 @@
-from src.Search import *
+from lib.Search import *
 
 
 def remove(args: [str], interact: bool = True):

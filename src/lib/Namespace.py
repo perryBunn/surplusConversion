@@ -11,3 +11,4 @@ class Namespace:
     E = False
     remove = False
     get_errs = False
+    nogui = False
