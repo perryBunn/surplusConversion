@@ -25,7 +25,7 @@ def gen_hash(path, file):
     return hashed.hexdigest()
 
 
-def read_config(file='config', path='..') -> dict:
+def read_config(file='config', path='.') -> dict:
     try:
         output = {}
         full_name = path + '/' + file
@@ -52,6 +52,8 @@ def write_file(file_list, hash_list, file, dev):
 def read_file(file='check.csv') -> list:
     try:
         output = []
+        files = os.listdir(".")
+        print(files)
         with open(file, newline='\n') as csv_file:
             reader = csv.reader(csv_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for row in reader:

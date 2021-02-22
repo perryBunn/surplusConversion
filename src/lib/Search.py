@@ -74,6 +74,7 @@ def search(type: str = None, make: str = None, model: str = None, serial: str = 
                 query = query.replace("?", f"'{key}'", 1)
                 params += 1
 
+    print(query)
     c.execute(query)
     rows = c.fetchall()
     if rows.__len__() > 1:

@@ -5,6 +5,7 @@ class Namespace:
     no_archive = False
     ingest = ""
     archive = ""
+    check = ""
     search = False
     A = False
     o = False

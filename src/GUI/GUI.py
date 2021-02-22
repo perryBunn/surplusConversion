@@ -1,7 +1,5 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from GUI import *
-
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):

@@ -9,7 +9,7 @@ from lib.Support import archive, read_config, read_file, gen_hash, write_file
 from lib.Remove import remove
 from lib.WriteDataBase import write_db
 from lib.Namespace import Namespace
-from src.GUI import GUI
+from GUI import GUI
 
 dev = False
 no_archive: False
@@ -70,6 +70,7 @@ def convert_changed(path, files):
     print('Wrote to db')
 
 
+# TODO: This file needs to be rearranged for readability.
 def main(ingest_path="./ingest", archive_path="./archive", check_path='check.csv'):
     global no_archive
     global dev
@@ -87,7 +88,7 @@ def main(ingest_path="./ingest", archive_path="./archive", check_path='check.csv
             hash_list.append(hashcode)
             print(file, hashcode)
     # TODO: Need a case for there being not check file.
-    obj = read_file()  # Reads in existing check file
+    obj = read_file(check_path)  # Reads in existing check file
     changed_files = []
     for row in obj:
         if not hash_list.__contains__(row[1]) and file_list.__contains__(row[0]):
@@ -112,6 +113,7 @@ parser.add_argument("--nogui", action='store_true', help="Will not start the GUI
 parser.add_argument("--add", action='store_true', help="Adds new Excel files from the ingest")
 parser.add_argument("ingest", nargs="?", default="./ingest", help="Sets the ingest path")
 parser.add_argument("archive", nargs="?", default="./archive", help="Sets the archive path")
+parser.add_argument("check", nargs="?", default="./check.csv", help="Sets the check path")
 # Defaults to just Surplus
 parser.add_argument("--search", nargs="*", help="Will search Surplus table for an asset")
 # Searches all tables
@@ -145,7 +147,7 @@ else:
     if c.E:
         E = True
     if c.add:
-        main(c.ingest, c.archive)
+        main(c.ingest, c.archive, c.check)
         exit()
     if c.search:
         search_parse(c.search, c.A, c.o, c.E)
@@ -154,6 +156,5 @@ else:
         remove(c.remove)
         exit()
     if c.get_errs:
-        print("Not implemented")
-        exit()
-    raise ValueError("No arguments were passed")
+        raise NotImplementedError
+    raise ValueError("No action arguments were passed")
