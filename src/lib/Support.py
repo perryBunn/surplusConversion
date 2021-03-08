@@ -2,6 +2,7 @@ import os
 import hashlib
 import csv
 import traceback
+import configparser
 
 
 def archive(path, file_list, archive_path):
@@ -25,17 +26,17 @@ def gen_hash(path, file):
     return hashed.hexdigest()
 
 
-def read_config(file='config', path='.') -> dict:
-    try:
-        output = {}
-        full_name = path + '/' + file
-        with open(full_name, newline='\n') as file:
-            for line in file:
-                items = line.split()
-                output[items[0]] = items[1]
-        return output
-    except Exception:
-        traceback.print_exc()
+def read_config(file='config.ini', path='.'):
+    full_name = path + '/' + file
+    config = configparser.ConfigParser()
+    config.read(full_name)
+    return config
+
+
+def write_config(config, file='config.ini', path='.'):
+    full_name = path + '/' + file
+    with open(full_name, 'w') as configfile:
+        config.write(configfile)
 
 
 def write_file(file_list, hash_list, file, dev):
