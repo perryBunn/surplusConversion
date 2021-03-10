@@ -61,7 +61,7 @@ def convert_changed(path, files):
         print('Wrote excel file')
     except Exception as e:
         print(e)
-    write_db(res, dev=config.dev)
+    write_db(res, dev=config['DEFAULT'].getboolean('dev'))
     print('Wrote to db')
 
 
@@ -89,10 +89,10 @@ def ingest(ingest_path="./ingest", archive_path="./archive", check_path='check.c
         if not hash_list.__contains__(row[1]) and file_list.__contains__(row[0]):
             print("File has changed. Updating %s..." % (row[0]))
             changed_files.append(row[0])
-            write_file(file_list, hash_list, check_path, config['DEFAULT']['dev'])
+            write_file(file_list, hash_list, check_path, config['DEFAULT'].getboolean('dev'))
         if not file_list.__contains__(row[0]):
             changed_files.append(row[0])
     if changed_files.__len__() != 0:
         convert_changed(ingest_path, changed_files)
-    if not config.no_archive:
+    if not config['DEFAULT'].getboolean('noarchive'):
         archive(ingest_path, file_list, archive_path)

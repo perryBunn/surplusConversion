@@ -45,11 +45,11 @@ def main():
         print("Version:", temp)
         exit()
     if c.dev:
-        config.dev = True
-        write_config(config, path='.')
+        config['DEFAULT']['dev'] = 'true'
+        write_config(config, path='./..')
         print("Developer mode enabled.")
     if c.no_archive:
-        config.no_archive = True
+        config['DEFAULT']['noarchive'] = 'true'
         write_config(config)
     if not c.nogui:
         menu.gui()

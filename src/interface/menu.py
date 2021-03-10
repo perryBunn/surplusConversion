@@ -1,7 +1,9 @@
+import configparser
 import sys
 import random
 from PySide6 import QtCore, QtWidgets, QtGui
 from interface import search
+from ingest import ingest
 
 
 class Menu(QtWidgets.QMainWindow):
@@ -27,13 +29,14 @@ class Menu(QtWidgets.QMainWindow):
 
         self.ingest_button.clicked.connect(self.ingest)
         self.search_button.clicked.connect(self.search)
-        self.config_button.clicked.connect(self.config)
+        self.config_button.clicked.connect(self.change_config)
+        self.config = configparser.ConfigParser()
+        self.config.read('../../config.ini')
 
     @QtCore.Slot()
     def ingest(self):
         print("Running ingest")
-
-        pass
+        ingest(self.config['FILES']['ingest'], self.config['FILES']['archive'], self.config['FILES']['check'])
 
     @QtCore.Slot()
     def search(self):
@@ -44,7 +47,7 @@ class Menu(QtWidgets.QMainWindow):
             self.w.show()
 
     @QtCore.Slot()
-    def config(self):
+    def change_config(self):
         print("config.ini")
         pass
 
