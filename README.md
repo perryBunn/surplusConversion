@@ -1,4 +1,4 @@
-#Ingest Naming Scheme
+# Ingest Naming Scheme
 for the files in ingest, they need to be named as follows
 
 ```<Semester> <Year> <Edition>.xlsx```
