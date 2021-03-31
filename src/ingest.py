@@ -4,13 +4,14 @@ import numpy as np
 import pandas as pd
 import configparser
 
+import toml
 
 from lib.Support import archive, read_config, read_file, gen_hash, write_file
 from lib.WriteDataBase import write_db
 
 
 def convert_changed(path, files):
-    config = read_config(file='../config.ini')
+    config = toml.load('config.toml')
     df1 = None
     for file in files:
         full_name = path + '/' + file
@@ -67,11 +68,11 @@ def convert_changed(path, files):
 
 # TODO: This file needs to be rearranged for readability.
 def ingest(ingest_path="./ingest", archive_path="./archive", check_path='check.csv'):
-    config = configparser.ConfigParser()
-    config.read('./config.ini')
+    config = toml.load('config.toml')
     # Read directory 'ingest'
     # Get list of excel sheets
     files = os.listdir(ingest_path)  # TODO: This need to have a check to make sure that the path exist
+    print(files)
     hash_list = []
     file_list = []
 
@@ -94,5 +95,5 @@ def ingest(ingest_path="./ingest", archive_path="./archive", check_path='check.c
             changed_files.append(row[0])
     if changed_files.__len__() != 0:
         convert_changed(ingest_path, changed_files)
-    if not config['DEFAULT'].getboolean('noarchive'):
+    if not config['DEFAULT']['noarchive']:
         archive(ingest_path, file_list, archive_path)

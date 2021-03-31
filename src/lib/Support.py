@@ -4,6 +4,8 @@ import csv
 import traceback
 import configparser
 
+import toml
+
 
 def archive(path, file_list, archive_path):
     for file in file_list:
@@ -26,17 +28,18 @@ def gen_hash(path, file):
     return hashed.hexdigest()
 
 
-def read_config(file='config.ini', path='.'):
+def read_config(file='config.toml', path='.'):
     full_name = path + '/' + file
     config = configparser.ConfigParser()
     config.read(full_name)
     return config
 
 
-def write_config(config, file='config.ini', path='.'):
-    full_name = path + '/' + file
-    with open(full_name, 'w') as configfile:
-        config.write(configfile)
+def write_config(config, file='config.toml', path='.'):
+    full_path = os.path.join(path, file)
+    f = open(full_path, 'w')
+    toml.dump(config, f)
+    f.close()
 
 
 def write_file(file_list, hash_list, file, dev):

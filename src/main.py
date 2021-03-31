@@ -1,5 +1,5 @@
 import argparse
-import configparser
+import toml
 from lib.Search import search_parse
 from lib.Support import read_config, write_config
 from lib.Remove import remove
@@ -35,12 +35,10 @@ def main():
     parser.add_argument("--get_errs", help="Will print the assets in the Errors table")
     parser.add_argument("--no_archive", action='store_true')
 
-    config = configparser.ConfigParser()
-    config.read('../config.ini')
+    config = toml.load('config.toml')
 
     parser.parse_args(namespace=c)
     if c.version:
-        print(config)
         temp = config['DEFAULT']['version']
         print("Version:", temp)
         exit()
@@ -52,7 +50,7 @@ def main():
         config['DEFAULT']['noarchive'] = 'true'
         write_config(config)
     if not c.nogui:
-        menu.gui()
+        menu.start()
     else:
         if c.A:
             A = True

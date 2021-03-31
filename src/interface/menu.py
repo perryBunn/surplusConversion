@@ -1,8 +1,11 @@
-import configparser
+from configparser import SafeConfigParser
 import sys
 import random
+
+import toml
 from PySide6 import QtCore, QtWidgets, QtGui
 from interface import search
+from interface import config
 from ingest import ingest
 
 
@@ -10,7 +13,8 @@ class Menu(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.w = search.Search()
+        self.s = search.Search()
+        self.c = config.Config()
 
         self.ingest_button = QtWidgets.QPushButton("Run Ingest")
         self.search_button = QtWidgets.QPushButton("Search")
@@ -30,29 +34,32 @@ class Menu(QtWidgets.QMainWindow):
         self.ingest_button.clicked.connect(self.ingest)
         self.search_button.clicked.connect(self.search)
         self.config_button.clicked.connect(self.change_config)
-        self.config = configparser.ConfigParser()
-        self.config.read('../../config.ini')
+
+        self.config = toml.load('config.toml')
 
     @QtCore.Slot()
     def ingest(self):
         print("Running ingest")
-        ingest(self.config['FILES']['ingest'], self.config['FILES']['archive'], self.config['FILES']['check'])
+        ingest(self.config["files"]['ingest'], self.config['files']['archive'], self.config['files']['check'])
 
     @QtCore.Slot()
     def search(self):
         print("Searching")
-        if self.w.isVisible():
+        if self.s.isVisible():
             pass
         else:
-            self.w.show()
+            self.s.show()
 
     @QtCore.Slot()
     def change_config(self):
-        print("config.ini")
-        pass
+        print("Config")
+        if self.c.isVisible():
+            pass
+        else:
+            self.c.show()
 
 
-def gui():
+def start():
     app = QtWidgets.QApplication([])
 
     widget = Menu()
@@ -64,4 +71,4 @@ def gui():
 
 
 if __name__ == "__main__":
-    gui()
+    start()
